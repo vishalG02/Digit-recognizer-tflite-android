@@ -17,16 +17,22 @@ class Classifier(activity: Activity) {
     private val options = Interpreter.Options()
     private val mInterpreter: Interpreter
     private val mImageData: ByteBuffer?
+    //784px 1d array
     private val mImagePixels = IntArray(IMG_HEIGHT * IMG_WIDTH)
+    // probabilty of each class stored
+    //from 0-9
     private val mResult = Array(1) { FloatArray(NUM_CLASSES) }
     fun classify(bitmap: Bitmap): Result {
         convertBitmapToByteBuffer(bitmap)
         val startTime = SystemClock.uptimeMillis()
+        //running model
         mInterpreter.run(mImageData, mResult)
         val endTime = SystemClock.uptimeMillis()
         val timeCost = endTime - startTime
         Log.v(LOG_TAG, "classify(): result = " + Arrays.toString(mResult[0])
                 + ", timeCost = " + timeCost)
+
+        //result class
         return Result(mResult[0], timeCost)
     }
 
@@ -59,10 +65,14 @@ class Classifier(activity: Activity) {
     companion object {
         private val LOG_TAG = Classifier::class.java.simpleName
         private const val MODEL_NAME = "digit.tflite"
+        //no of image
         private const val BATCH_SIZE = 1
         const val IMG_HEIGHT = 28
         const val IMG_WIDTH = 28
+        //only grey images
+        //if rgb then 3 channels
         private const val NUM_CHANNEL = 1
+        //0-9
         private const val NUM_CLASSES = 10
         private fun convertPixel(color: Int): Float {
             return (255 - ((color shr 16 and 0xFF) * 0.299f + (color shr 8 and 0xFF) * 0.587f + (color and 0xFF) * 0.114f)) / 255.0f
@@ -71,6 +81,7 @@ class Classifier(activity: Activity) {
 
     init {
         mInterpreter = Interpreter(loadModelFile(activity), options)
+        // for img memory allocation 4 size of float datatype
         mImageData = ByteBuffer.allocateDirect(
                 4 * BATCH_SIZE * IMG_HEIGHT * IMG_WIDTH * NUM_CHANNEL)
         mImageData.order(ByteOrder.nativeOrder())
